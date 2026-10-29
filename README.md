@@ -5,6 +5,8 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)](requirements.txt)
 [![Self-check](https://img.shields.io/badge/self--check-25%2F25%20PASS-22c55e.svg)](docs/SELF-CHECK.md)
 
+> 🌐 [English](README.en.md) · 中文
+
 **一个现代化、开源的狼蛛 AULA F99 Pro 键盘控制中心 —— 替代那个 2019 年风格、还不显示电量的官方驱动。**
 
 > **直接下载**：[AULA-Hub-portable.zip](https://github.com/xx12ek/aula-f99-pro-hub/releases/latest) · 免安装、不需要 Python、不需要管理员权限
@@ -189,6 +191,78 @@ python tools/selfcheck.py
 
 ---
 
+---
+
+## 搜索关键词 / Keywords
+
+<sub>这一节是给人搜的，不是给读的 —— 如果你是从搜索引擎或 GitHub 搜索进来的，命中的应该是下面某一行。</sub>
+
+**中文**：狼蛛 F99 Pro 驱动 · 狼蛛F99Pro驱动 · 狼蛛键盘驱动 · 狼蛛驱动下载 · AULA驱动 ·
+AULA F99 Pro 驱动 · 狼蛛 F99 Pro 软件 · 狼蛛键盘电量 · 键盘电量显示 · 狼蛛键盘灯光软件 ·
+狼蛛改键软件 · 狼蛛宏设置 · 狼蛛旋钮 · 狼蛛键盘说明书 · 狼蛛键盘固件 · F99 Pro 驱动替代 ·
+官方驱动太丑 · 官方驱动没有电量 · 国产键盘驱动 · 磁轴键盘驱动（本型号是机械轴，不支持） ·
+机械键盘改键工具 · 键盘逐键RGB · 键盘音乐律动 · 键盘灯效软件 · 免安装键盘驱动 ·
+开源键盘驱动 · 键盘驱动逆向
+
+**English**: AULA F99 Pro driver · AULA keyboard software · AULA driver download ·
+AULA F99 Pro software · AULA keyboard battery · AULA lighting software ·
+AULA remapping · AULA macro software · AULA knob · AULA firmware ·
+replace AULA driver · AULA driver alternative · Chinese keyboard driver ·
+HID keyboard tool · per-key RGB keyboard · keyboard music visualizer ·
+open source keyboard driver · keyboard driver reverse engineering ·
+258A:010C · 3554:FA09
+
+**型号写法**（同款键盘的各处叫法）：F99 Pro · F99Pro · F99-PRO · AULA F99 · 狼蛛F99 ·
+狼蛛 F99 Pro · 狼蛛F99Pro · 狼蛛 F99PRO · AULA-F99Pro
+
+---
+
+## 同款键盘常见问题
+
+### 官方驱动看不到电量，是键盘不支持吗？
+
+不是。原厂 `KB.ini` 里三个型号配置都写着 `ShowPower=0`，等于**官方主动把这个功能关掉了**。
+键盘固件本身有电量命令（有线 `0x87`、2.4G `0x4A`），本软件直接读它，所以能显示。
+
+### 官方驱动太老了，还在用 Windows 7 的风格
+
+原厂最后一次更新是 2024 年，界面是 MFC 时代的产物。本软件用 WebView2 重写了界面，深色/浅色跟随系统。
+
+### 我这个是 F99 还是 F99 Pro？能用吗？
+
+设备管理器里看硬件 ID：
+- `USB\VID_258A&PID_010C` → F99 Pro 有线，**确定支持**
+- `USB\VID_3554&PID_FA09` → 2.4G 接收器，**确定支持**
+- 其他 VID/PID → 大概率不支持，但你可以跑 `tools/selfcheck.py` 看看，然后把结果贴到 issue
+
+一行命令自查：
+
+```powershell
+Get-PnpDevice -Class HIDClass | Where-Object { $_.InstanceId -match "258A|3554" } |
+  Select-Object FriendlyName, InstanceId
+```
+
+### 会不会把键盘刷坏？
+
+不会。本软件**完全不碰固件**，只发标准 HID 读写命令，和不装任何软件相比风险没有增加。
+唯一会写设备的地方是改灯效/改键/写颜色，这些都能用「导出配置」先备份、再一键还原。
+
+### 为什么 2.4G 下有些功能是灰的？
+
+固件在无线通道上只开放了**读**命令。写改键、写逐键颜色、写宏在 2.4G 下发出去设备不响应
+（我们试了 24 + 18 组命令组合，全部无效）。插上数据线就全功能可用。
+
+### 能刷固件吗？
+
+不能。原厂的 V3 升级工具（`V3-F99Pro_20240508.exe`）只是一个**烧录器**，本身不含固件镜像
+——它启动后让你选一个 `.hex` 文件。没有那个文件，谁也没法刷。
+
+### 长按旋钮为什么会让键盘进一个奇怪的模式？
+
+那是**键盘固件自己的行为**，用户态关不掉。表现是旋钮开始直接调键盘背光、并且不再给电脑发按键。
+本软件有一个「固件模式守护」：检测到就会立刻把状态拉回来，所以你会看到指示灯闪一下然后恢复正常。
+
+---
 ## 许可
 
 MIT。字体与图标均为自制，无第三方素材。
