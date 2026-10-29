@@ -344,6 +344,22 @@ Get-PnpDevice -Class HIDClass | Where-Object { $_.InstanceId -match "258A|3554" 
 那是**键盘固件自己的行为**，用户态关不掉。表现是旋钮开始直接调键盘背光、并且不再给电脑发按键。
 本软件有一个「固件模式守护」：检测到就会立刻把状态拉回来，所以你会看到指示灯闪一下然后恢复正常。
 
+## 致谢 / 参考过的项目
+
+这个项目是站在别人肩膀上做的。下面这些是**实际参考过**的（不是客套）：
+
+| 项目 | 用到了什么 |
+|---|---|
+| [yhuikzdtguioaert/AulaSofwareLinux](https://github.com/yhuikzdtguioaert/AulaSofwareLinux) | Rust 写的 Linux 驱动。`proto.rs` 的帧格式（`PAGE=512` / `HEADER=8` / `REPORT_LEN=520` / 重试间隔）、`config_page.rs` 的配置页布局（`EFFECT_STRIDE=2`、`COLOR_RANDOM=7`、`slot_of(ui)=ui-1`）都是先在这里核对过才动手；`worker.rs` 那 8 种实测可用的旋钮动作，是我们旋钮功能列表的起点 |
+| [pradyumnac/aula-f99-controller](https://github.com/pradyumnac/aula-f99-controller) | 同款 F99 的协议文档，确认了厂商 HID 集合的选择方式 |
+| [cloudglides/aula-f75-linux-drivers](https://github.com/cloudglides/aula-f75-linux-drivers) | WebHID 实现，交叉验证了 2.4G 通道的包结构 |
+| [parsiya/f108-pro](https://github.com/parsiya/f108-pro) / [marcoslor/Aula-F87-Controller](https://github.com/marcoslor/Aula-F87-Controller) | 同系列型号的记录，用来判断哪些偏移是 F99 Pro 独有的、哪些是全系通用 |
+| [CalcProgrammer1/OpenRGB](https://github.com/CalcProgrammer1/OpenRGB) | 它的 `SinowealthController` 用的也是 `0x258A` 这个 VID。虽然协议和我们不同，但它证明了这批键盘的灯效数据结构（每键 RGB 平面）是同一套思路 |
+
+另外，协议里的每一个字节都是**在自己的键盘上实测出来**的 —— 上面这些项目给的是方向和交叉验证，不是结论。凡是我们没验证过的，`docs/PROTOCOL.md` 里都标了 ⚠️ 或 ❓。
+
+如果你发现有哪一条本该署名却没署，开 issue 告诉我，我立刻补。
+
 ---
 ## 许可
 
