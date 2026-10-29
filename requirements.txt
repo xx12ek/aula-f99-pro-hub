@@ -1,0 +1,10 @@
+# AULA Hub —— 运行时依赖
+# 装法：pip install -r requirements.txt
+
+hidapi==0.15.0          # HID 设备通信
+pywebview==6.2.1        # 窗口 + JS 桥（Windows 走 WebView2）
+pystray==0.19.5         # 系统托盘
+pillow==12.3.0          # OSD 绘制、托盘图标
+numpy==2.3.5            # 音乐律动的 FFT
+SoundCard==0.4.6        # 系统音频环回采集（WASAPI loopback）
+comtypes==1.4.17        # WASAPI / WMI 的 COM 调用

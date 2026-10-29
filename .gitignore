@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# 运行时产物
+backup/
+tmp/
+*.log
+
+# 本地配置与快照
+*.bak
+*.bak-*
+_bg.html
+_dbg.html
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 系统
+Thumbs.db
+desktop.ini
+.DS_Store
+# 发布产物（走 Releases 附件，不进仓库）
+*.zip
+AULA-Hub-portable.zip

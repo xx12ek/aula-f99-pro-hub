@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AULA Hub</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="bg-bloom"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><span>A</span></div>
+    <div class="brand-text">
+      <h1>AULA Hub</h1>
+      <p>F99 Pro 控制中心</p>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <nav class="nav-tabs">
+      <button id="tabLight" class="active">灯光</button>
+      <button id="tabRGB">单键调色</button>
+      <button id="tabKeys">改键 / 宏</button>
+      <button id="tabSet">设置</button>
+      <button id="tabMisc">杂项</button>
+    </nav>
+    <div class="mode-pill" id="modePill">
+      <i class="dot"></i><span id="modeLabel">正在连接…</span>
+    </div>
+    <button class="icon-btn" id="refreshBtn" title="刷新">
+      <svg viewBox="0 0 24 24" width="17" height="17"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- 设备 -->
+  <section class="card device-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">当前设备</span>
+        <h2 id="modelName">AULA F99 Pro</h2>
+      </div>
+      <span class="chip" id="modelChip">三模机械键盘</span>
+    </div>
+
+    <div class="battery">
+      <svg class="ring" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#7c4dff"/>
+            <stop offset="55%" stop-color="#4f46e5"/>
+            <stop offset="100%" stop-color="#06a3c4"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track" cx="100" cy="100" r="86"/>
+        <circle class="ring-value" id="ringValue" cx="100" cy="100" r="86"/>
+      </svg>
+      <div class="battery-center">
+        <div class="battery-num"><span id="batteryNum">--</span><em>%</em></div>
+        <div class="battery-state" id="batteryState">读取中</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span>固件版本</span><strong id="statFw">v24</strong></div>
+      <div class="stat"><span>按键矩阵</span><strong>128</strong></div>
+      <div class="stat"><span>连接通道</span><strong id="statMode">—</strong></div>
+    </div>
+
+    <div class="device-foot">
+      <span class="pulse" id="syncPulse"></span>
+      <span id="syncText">等待同步</span>
+    </div>
+  </section>
+
+  <!-- 灯效 -->
+  <section class="card light-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">灯光</span>
+        <h2 id="effectTitle">常亮</h2>
+      </div>
+      <div class="live-tag"><i></i>实时生效</div>
+    </div>
+
+    <div class="effects" id="effects"></div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <div class="row-label">颜色</div>
+      <!-- 第 8 颗「自定义色」由 JS 追加到 .colors 里，跟 7 颗固定色排成一行 -->
+      <div class="colors" id="colors"></div>
+    </div>
+
+    <div class="row">
+      <div class="row-label">亮度</div>
+      <input class="seg" id="brightnessSeg" type="range" min="0" max="9" step="0.01" value="4" aria-label="亮度" autocomplete="off">
+    </div>
+
+    <div class="row">
+      <div class="row-label">速度</div>
+      <input class="seg" id="speedSeg" type="range" min="0" max="4" step="0.01" value="4" aria-label="速度" autocomplete="off">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="row">
+      <div class="row-label">自动休眠</div>
+      <select id="sleepSelect" class="select"></select>
+    </div>
+  </section>
+
+  <!-- 音乐律动：软件侧采系统声音 → FFT → 逐键上色 -->
+  <section class="card music-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">音乐律动</span>
+        <h2>让键盘跟着声音亮</h2>
+      </div>
+      <span class="chip" id="musicState">待机</span>
+    </div>
+
+    <p class="music-note" id="musicNote">
+      采系统正在播放的声音（WASAPI 环回），算频谱后直接写键盘的单键颜色。
+      因为改的是逐键颜色，需要插数据线（2.4G 只能读不能写），并且会自动把灯效切到自定义。
+    </p>
+
+    <div class="music-body">
+      <div class="music-left">
+        <div class="row-label">风格</div>
+        <div class="music-moods" id="musicMoods"></div>
+      </div>
+
+      <div class="music-right">
+        <div class="music-row">
+          <div class="row-label">灵敏度</div>
+          <input class="seg" id="musicGain" type="range" min="20" max="250" step="5" value="100" aria-label="灵敏度">
+          <span class="music-val" id="musicGainVal">1.00×</span>
+        </div>
+        <div class="music-row">
+          <div class="row-label">刷新率</div>
+          <input class="seg" id="musicFps" type="range" min="8" max="40" step="1" value="22" aria-label="刷新率">
+          <span class="music-val" id="musicFpsVal">22 fps</span>
+        </div>
+      </div>
+
+      <div class="music-acts">
+        <button class="primary-btn" id="musicToggle">开始律动</button>
+        <div class="music-meter"><i id="musicMeterFill"></i></div>
+        <span class="music-hint" id="musicHint">停止时会把原来的单键颜色写回去</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- 单键 RGB 调色 -->
+<main class="layout rgb-layout" id="rgbLayout" hidden>
+  <section class="card rgb-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">单键调色</span>
+        <h2>逐键自定义颜色</h2>
+      </div>
+      <div class="rgb-head-right">
+        <span class="chip" id="rgbModeChip">仅数据线可用</span>
+        <button class="ghost-btn" id="rgbReload">重新读取</button>
+      </div>
+    </div>
+
+    <p class="rgb-tip" id="rgbTip">
+      点一个键 → 调色 → 刷到键盘。单键颜色只在「自定义」灯效下显示，点下面的按钮会自动切过去。
+    </p>
+
+    <div class="rgb-toolbar">
+      <div class="rgb-field rgb-pick">
+        <span class="rgb-flabel">画笔颜色</span>
+        <button type="button" class="rgb-swatch-wrap" id="rgbPickBtn" title="点开色盘选颜色">
+          <span class="rgb-swatch-dot" id="rgbSwatchDot"></span>
+          <span class="rgb-hex" id="rgbHex">#8B5CF6</span>
+        </button>
+        <input type="hidden" id="rgbColor" value="#8b5cf6">
+        <input type="hidden" id="wheelTarget" value="keys">
+        
+      </div>
+      <div class="rgb-field">
+        <span class="rgb-flabel">快捷色</span>
+        <div class="rgb-presets" id="rgbPresets"></div>
+      </div>
+      <div class="rgb-field rgb-actions">
+        <button class="ghost-btn" id="rgbApplyAll">整块刷成这个颜色</button>
+        <button class="ghost-btn" id="rgbClearAll">全部熄灭</button>
+        <button class="primary-btn" id="rgbUseCustom">切到自定义灯效</button>
+      </div>
+    </div>
+
+    <div class="rgb-kbd-wrap"><div class="kbd rgb-kbd" id="rgbKbd"></div></div>
+
+    <div class="rgb-foot">
+      <span id="rgbHint">点击键帽选中，可 Ctrl / Shift 多选；选中后按上方颜色刷色。</span>
+      <span class="rgb-count" id="rgbCount">已选 0 键</span>
+    </div>
+  </section>
+
+  <section class="card rgb-side">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">选中</span>
+        <h2 id="rgbSelTitle">未选中</h2>
+      </div>
+    </div>
+    <div class="rgb-sel-info" id="rgbSelInfo">点一个键，这里会显示它当前的颜色。</div>
+    <div class="divider"></div>
+    <div class="rgb-quick">
+      <span class="rgb-flabel">单独改</span>
+      <div class="rgb-single">
+        <input type="color" id="rgbSingleColor" value="#ff3b30">
+        <button class="ghost-btn" id="rgbSingleApply">应用到这个键</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p class="rgb-note">
+      槽号 = 矩阵号，与改键页的「矩阵 #N」一致。126 槽里实际只有 99 个键，未使用的槽改了不起作用。
+    </p>
+  </section>
+</main>
+
+<!-- 改键 / 宏 工作台 -->
+<main class="layout keys-layout" id="keysLayout" hidden>
+  <section class="card keys-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">改键 / 宏</span>
+        <h2>键盘布局</h2>
+      </div>
+      <div class="layer-tabs" id="layerTabs">
+        <button data-l="0" class="active" title="默认按键层">默认</button>
+        <button data-l="1" title="FN1 层">FN1</button>
+        <button data-l="2" title="FN2 层">FN2</button>
+        <button data-l="3" title="Tap 层（轻触发）">Tap</button>
+      </div>
+    </div>
+    <div class="kbd-wrap"><div class="kbd" id="kbd"></div></div>
+    <div class="keys-foot">
+      <span>点击键位 → 选「改成按键 / 绑宏 / 清除」。改键写在键盘里，无需后台。</span>
+      <button class="ghost-btn" id="restoreBtn">一键还原官方默认</button>
+    </div>
+  </section>
+
+  <section class="card knob-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">旋钮 / 模式键</span>
+        <h2>右侧旋钮</h2>
+      </div>
+      <div class="knob-state" id="knobState">读取中…</div>
+    </div>
+
+    <div class="knob-slots" id="knobSlots">
+      <div class="knob-slots-head">
+        <span class="knob-slots-title">长按旋钮切换的槽位</span>
+        <span class="knob-slots-robin" id="knobSlotsRobin"></span>
+      </div>
+      <div class="knob-slot-chips" id="knobSlotChips"></div>
+      <p class="knob-slot-hint" id="knobSlotHint"></p>
+      <div class="knob-slot-tools">
+        <button class="knob-slot-tool" type="button" id="knobSlotAdd">+ 新增槽位</button>
+        <button class="knob-slot-tool" type="button" id="knobSlotEdit">编辑当前槽</button>
+        <button class="knob-slot-tool" type="button" id="knobSlotDel">删除当前槽</button>
+        <button class="knob-slot-tool ghost" type="button" id="knobSlotReset">恢复出厂</button>
+      </div>
+
+      <div class="knob-slot-form" id="knobSlotForm" hidden>
+        <div class="knob-slot-form-row">
+          <label>名字<input class="knob-slot-input" id="knobSlotName" maxlength="12" placeholder="比如 音乐律动" /></label>
+        </div>
+        <div class="knob-slot-form-row">
+          <label>顺时针<select class="select" id="knobSlotCw"></select></label>
+          <label>逆时针<select class="select" id="knobSlotCcw"></select></label>
+          <label>按下<select class="select" id="knobSlotPress"></select></label>
+        </div>
+        <div class="knob-slot-form-acts">
+          <button class="knob-slot-tool" type="button" id="knobSlotSave">保存</button>
+          <button class="knob-slot-tool ghost" type="button" id="knobSlotCancel">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="knob-bind">
+      <div class="knob-bind-head">
+        <div class="knob-bind-title">
+          转动方向分开绑
+          <span class="knob-hits" id="knobHits"></span>
+        </div>
+        <label class="knob-toggle">
+          <input type="checkbox" id="knobTakeover" />
+          <span>接管旋钮</span>
+        </label>
+      </div>
+      <p class="knob-soft-hits" id="knobSoftHits"></p>
+      <p class="knob-guard-hint" id="knobGuardHint"></p>
+      <p class="knob-bind-tip" id="knobBindTip">下面三个下拉框改的是<b>当前槽位</b>的绑定；换槽位就换一整套动作。</p>
+      <div class="knob-rows">
+        <div class="knob-row">
+          <span class="knob-dir">顺时针 ↻</span>
+          <select class="select" id="knobCw"></select>
+        </div>
+        <div class="knob-row">
+          <span class="knob-dir">逆时针 ↺</span>
+          <select class="select" id="knobCcw"></select>
+        </div>
+        <div class="knob-row">
+          <span class="knob-dir">按下</span>
+          <select class="select" id="knobPress"></select>
+        </div>
+        <div class="knob-row">
+          <span class="knob-dir">每次跳</span>
+          <select class="select knob-step" id="knobStep">
+            <option value="1">1 档</option>
+            <option value="2">2 档</option>
+            <option value="3">3 档</option>
+            <option value="4">4 档</option>
+          </select>
+        </div>
+      </div>
+      <p class="knob-bind-note">
+        为什么方向能分开：键盘固件已经把「顺时针 / 逆时针 / 按下」翻译成三个不同的系统按键（音量+ / 音量− / 静音），
+        软件在半路把它们接过来，就能各干各的。
+      </p>
+      <p class="knob-osd-note">
+        <b>提示条从哪来：</b>绑成「系统默认（音量 / 静音）」时会<b>放行真实按键</b>，由 Windows 自己画那条原生条 ——
+        实测这是唯一能出系统原生条的办法（程序直接改音量 / 改屏幕亮度，系统一律不弹条）。
+        绑成别的动作时按键被截下来，改由本软件画一条<b>按系统原生条逐像素复刻</b>的提示条（170×45 圆角矩形、跟随系统强调色）。
+      </p>
+      <p class="knob-screen-hint" id="knobScreenHint"></p>
+      <p class="knob-native-hint">
+        <b>想要屏幕亮度也出系统原生条？</b>旋钮这边的「屏幕亮度 +/−」是软件直接改亮度，系统不会弹条。
+        要原生条只有一条路：去<b>改键</b>页把某个物理键绑成<b>多媒体 → 亮度+ / 亮度−</b>，
+        由键盘固件自己把亮度键发给 Windows（已实测可写、可还原），按那个键就会看到系统自己的亮度条。
+      </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="knob-body">
+      <div class="knob-dial" id="knobDial" title="旋钮在键盘里就是一条矩阵记录 #108">
+        <div class="knob-ring"></div>
+        <div class="knob-dot"></div>
+      </div>
+      <div class="knob-mid">
+        <div class="knob-cur" id="knobCur">当前功能：—</div>
+        <div class="knob-rec" id="knobRec"></div>
+        <div class="knob-presets" id="knobPresets"></div>
+        <div class="knob-unverified" id="knobUnverified" hidden>
+          这个功能不在实测验证过的 7 种里。键盘会把记录存下来，但转动旋钮时到底报不报得出来没有把握 —— 试完不行就点「恢复出厂」。
+        </div>
+      </div>
+      <div class="knob-acts">
+        <button class="primary-btn" id="knobEdit">改成其他功能…</button>
+        <button class="ghost-btn" id="knobReset">恢复出厂</button>
+      </div>
+    </div>
+    <p class="knob-note">
+      上面那条 <b>#108</b> 记录决定「旋钮整体往电脑报什么」，和普通键同级，能随便改；
+      三个方向的细分动作则在「转动方向分开绑」里配。
+      <b>「长按 2 秒切办公 / 游戏模式」是固件内部行为，这两处都改不掉它</b>。
+    </p>
+  </section>
+
+  <section class="card macro-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">宏库</span>
+        <h2 id="macroTitle">宏</h2>
+      </div>
+      <button class="ghost-btn" id="addMacroBtn">+ 新建宏</button>
+    </div>
+    <div class="macro-list" id="macroList"></div>
+    <div class="divider"></div>
+    <div class="macro-editor" id="macroEditor" hidden>
+      <div class="row"><div class="row-label">名称</div><input id="meName" class="input" maxlength="30" /></div>
+      <div class="row"><div class="row-label">步骤</div><div class="me-steps" id="meSteps"></div></div>
+      <div class="me-add">
+        <input id="meKey" class="input" placeholder="键名，如 a / ctrl / f5 / space" />
+        <input id="meDelay" class="input small" type="number" value="20" title="延时 ms" />
+        <button class="ghost-btn" id="meAddBtn">+ 添加</button>
+      </div>
+      <div class="me-actions">
+        <button class="primary-btn" id="meSaveBtn">保存宏库到键盘</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card legend-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">说明</span>
+        <h2>键帽上的小字是什么意思</h2>
+      </div>
+    </div>
+    <div class="legend-grid" id="legendGrid"></div>
+  </section>
+</main>
+
+<!-- 键位编辑弹窗 -->
+<div class="modal-mask" id="keyModal" hidden>
+  <div class="modal wide">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow" id="kmGeo">键位</span>
+        <h2 id="kmTitle">修改键位</h2>
+        <p class="km-cur" id="kmCur">当前：无功能</p>
+      </div>
+      <button class="icon-btn" id="kmClose">✕</button>
+    </div>
+
+    <div class="km-tabs" id="kmTabs">
+      <button data-cat="media" class="active">多媒体</button>
+      <button data-cat="soft">软件功能</button>
+      <button data-cat="mouse">鼠标</button>
+      <button data-cat="cmd">常用命令</button>
+      <button data-cat="combo">组合键</button>
+      <button data-cat="key">键盘</button>
+      <button data-cat="mods">修饰键</button>
+      <button data-cat="oem">键盘内建</button>
+    </div>
+
+    <p class="km-hint" id="kmHint"></p>
+
+    <div class="km-panel" id="kmPanel"></div>
+
+    <div class="km-foot">
+      <button class="km-opt danger" data-act="clear">恢复默认（此键不发送功能）</button>
+      <div class="km-custom">
+        <input id="kmKey" class="input" placeholder="自定义键名，如 a / f5 / space" />
+        <button class="primary-btn" id="kmApply">改成这个键</button>
+      </div>
+    </div>
+
+    <div class="km-macros-wrap">
+      <div class="km-sep">或绑定一个宏</div>
+      <div class="km-macros" id="kmMacros"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 设置 -->
+<main class="layout set-layout" id="setLayout" hidden>
+  <section class="card info-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">设备信息</span>
+        <h2>这台键盘</h2>
+      </div>
+      <span class="chip" id="setModeChip">—</span>
+    </div>
+    <div class="info-grid" id="infoGrid"></div>
+    <div class="device-foot">
+      <span class="pulse" id="setPulse"></span>
+      <span id="setSync">等待同步</span>
+    </div>
+  </section>
+
+  <section class="card appset-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">全局设置</span>
+        <h2>这台电脑上的 AULA Hub</h2>
+      </div>
+    </div>
+
+    <div class="set-row">
+      <div class="set-text">
+        <strong>点 ✕ 时缩到右下角托盘</strong>
+        <span>关掉是直接退出。缩到托盘后键盘状态照旧轮询，托盘图标上能看电量。</span>
+      </div>
+      <button class="toggle" id="tgTray" role="switch" aria-checked="true"><i></i></button>
+    </div>
+
+    <div class="set-row">
+      <div class="set-text">
+        <strong>开机自动运行</strong>
+        <span>写当前用户注册表启动项，不需要管理员权限。启动后直接缩在托盘里。</span>
+      </div>
+      <button class="toggle" id="tgAuto" role="switch" aria-checked="false"><i></i></button>
+    </div>
+
+    <div class="set-row">
+      <div class="set-text">
+        <strong>界面刷新间隔</strong>
+        <span>越短越跟手，越费电。键盘本身 10 秒内只回一次缓存，改太小没意义。</span>
+      </div>
+      <select id="pollSelect" class="select small">
+        <option value="3">3 秒</option>
+        <option value="5">5 秒</option>
+        <option value="10">10 秒</option>
+        <option value="30">30 秒</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="card maint-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">维护</span>
+        <h2>备份与还原</h2>
+      </div>
+      <button class="ghost-btn" id="backupNowBtn">立即备份一次</button>
+    </div>
+    <p class="set-note">
+      写入前自动存一份到 <code>backup\</code>，改键写坏了点下面的按钮退回上一版。
+    </p>
+    <p class="restore-will" id="restoreWill"></p>
+    <div class="set-actions">
+      <button class="km-opt danger" id="restoreLatestBtn">还原到最近一次备份</button>
+      <button class="ghost-btn" id="openBackupBtn">打开备份文件夹</button>
+    </div>
+    <!-- 列表放最后：卡片万一还是高出视口，被裁掉的是列表尾部，
+         而不是「还原」按钮（真机 793px 视口实测踩过） -->
+    <div class="backup-list" id="backupList"></div>
+  </section>
+</main>
+
+<!-- 杂项 -->
+<main class="layout set-layout" id="miscLayout" hidden>
+  <section class="card info-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">杂项</span>
+        <h2>原版有、之前漏掉的功能</h2>
+      </div>
+      <span class="chip" id="miscLinkChip">—</span>
+    </div>
+    <p class="misc-lead" id="miscLead">正在读取…</p>
+
+    <div class="misc-grid">
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">灯效「关闭」</span>
+          <span class="misc-item-src">原版 tc_kb_led20</span>
+        </div>
+        <p class="misc-item-desc">原厂灯效列表最后一项是「关闭」，我们之前只有 19 项、漏了它。厂商把硬件灯效号 0 当关闭。</p>
+        <button class="misc-btn" type="button" id="miscEffectOff">把灯全关掉</button>
+      </div>
+
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">配置导入 / 导出</span>
+          <span class="misc-item-src">原版 tc_msg40 / tc_msg41</span>
+        </div>
+        <p class="misc-item-desc">把四层改键矩阵、配置页、逐键颜色、宏库一起存成 JSON，换机器或改坏了可以整份写回。</p>
+        <div class="misc-acts">
+          <button class="misc-btn" type="button" id="miscExport">导出一份</button>
+          <button class="misc-btn ghost" type="button" id="miscImport">从文件导入</button>
+        </div>
+      </div>
+
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">按键去抖</span>
+          <span class="misc-item-src">原版 tc_msg54</span>
+        </div>
+        <p class="misc-item-desc">KB.ini 里有 <code>ShowDebounce=0x04010101</code>，说明这个型号支持；但配置页里对应的偏移还没解出来。</p>
+        <button class="misc-btn ghost" type="button" id="miscDebounce">看看配置页现状</button>
+        <pre class="misc-out" id="miscDebounceOut" hidden></pre>
+      </div>
+
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">固件时间戳探测</span>
+          <span class="misc-item-src">诊断</span>
+        </div>
+        <p class="misc-item-desc">连读三次配置页看哪些字节自己在走。如果固件存了时间，这里就能看出来。</p>
+        <button class="misc-btn ghost" type="button" id="miscProbeTime">开始探测</button>
+        <pre class="misc-out" id="miscTimeOut" hidden></pre>
+      </div>
+
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">原始配置页</span>
+          <span class="misc-item-src">排障</span>
+        </div>
+        <p class="misc-item-desc">读 / 写设备那 128 字节配置页的原文。写之前会校验尾标记 <code>5A A5</code>，写完整页回读比对。</p>
+        <div class="misc-acts">
+          <button class="misc-btn ghost" type="button" id="miscPageRead">读出来</button>
+          <button class="misc-btn ghost" type="button" id="miscPageWrite">写回去</button>
+        </div>
+        <textarea class="misc-page" id="miscPageHex" rows="4" spellcheck="false" placeholder="点「读出来」看当前 128 字节"></textarea>
+        <pre class="misc-out" id="miscPageOut" hidden></pre>
+      </div>
+
+      <div class="misc-item">
+        <div class="misc-item-head">
+          <span class="misc-item-name">自动休眠</span>
+          <span class="misc-item-src">原版 tc_msg49 / tc_msg34</span>
+        </div>
+        <p class="misc-item-desc">无线模式下闲置多久进休眠。原版写的是「设备空闲指定的时间后会自动进入休眠状态」。最长 20 分钟 —— 键盘固件只认这 9 档，不是我们随便给的范围。</p>
+        <select class="select misc-sleep" id="miscSleep"></select>
+        <p class="misc-sleep-hint" id="miscSleepHint"></p>
+      </div>
+
+      <div class="misc-item danger">
+        <div class="misc-item-head">
+          <span class="misc-item-name">恢复出厂设置</span>
+          <span class="misc-item-src">原版 tc_msg21</span>
+        </div>
+        <p class="misc-item-desc">走固件复位命令。<b>会清掉灯效、改键、宏</b>，且只有有线连接能做。做之前请先导出一份配置。</p>
+        <button class="misc-btn danger" type="button" id="miscReset">恢复出厂…</button>
+      </div>
+    </div>
+
+    <p class="misc-foot" id="miscFoot"></p>
+  </section>
+
+  <section class="card appset-card">
+    <div class="card-head">
+      <div>
+        <span class="eyebrow">做不到的</span>
+        <h2>这个键盘上确实没有的能力</h2>
+      </div>
+    </div>
+    <ul class="misc-cannot">
+      <li><b>2.4G 下写矩阵 / 写逐键颜色 / 写宏库。</b>实测 24 + 18 组命令组合全部无效，固件在这条通道只开放读。要改请插数据线。</li>
+      <li><b>用软件唤出 Windows 原生亮度条。</b>WASAPI / SendInput / 扫描码 / WM_APPCOMMAND / WMI 全试过，只有键盘固件自己发 Consumer 0x6F 才会弹条；软件侧只能自绘一条像素级复刻的。</li>
+      <li><b>固件升级。</b>官方 V3 工具是烧录器、本体不含 .hex，本机也没有任何固件镜像；刷坏没法救。</li>
+      <li><b>鼠标 DPI / 回报率 / 火力键。</b>那些是原版给鼠标型号用的（tc_ms*），这把是键盘，固件不认这些命令。</li>
+    </ul>
+  </section>
+</main>
+
+
+<footer class="statusbar">
+  <span id="statusMsg">用户态 HID · 无需安装驱动</span>
+  <span class="ver">v0.3.0</span>
+</footer>
+
+<div class="rgb-pop" id="rgbPop" hidden>
+      <div class="rgb-pop-head">
+        <strong>色盘</strong>
+        <span>角度 = 色相 · 半径 = 饱和度 · 下面 = 明度</span>
+      </div>
+      <div class="rgb-pop-body">
+        <div class="rgb-wheel-box">
+          <canvas id="rgbWheel" width="720" height="720"></canvas>
+        </div>
+        <div class="rgb-pop-side">
+          <div class="rgb-pop-preview" id="rgbPreview"></div>
+          <label class="rgb-val-row">
+            <span>明度</span>
+            <input type="range" id="rgbVal" min="0" max="100" value="100">
+            <b id="rgbValNum">100</b>
+          </label>
+          <input type="text" id="rgbHexInput" class="rgb-hex-input"
+                 maxlength="7" spellcheck="false" autocomplete="off" value="#8B5CF6">
+          <button type="button" class="primary-btn rgb-pop-apply" id="rgbPopApply" hidden>刷到整块键盘</button>
+<p class="rgb-pop-note" id="rgbPopNote">选中的键会立刻变成这个颜色；没选键时只改画笔。</p>
+        </div>
+      </div>
+    </div>
+
+<div class="toast" id="toast"></div>
+
+<script src="catalog.js"></script>
+<script src="keymap.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
