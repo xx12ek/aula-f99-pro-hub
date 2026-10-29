@@ -5,6 +5,18 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)](requirements.txt)
 [![Self-check](https://img.shields.io/badge/self--check-25%2F25%20PASS-22c55e.svg)](docs/SELF-CHECK.md)
 
+<!--
+一句话摘要（给搜索引擎和人看的，不必逐字读）：
+狼蛛 AULA F99 Pro 键盘驱动替代品。官方驱动看不到电量？这个能看。
+开源、免安装、不需要 Python，Windows 10/11 双击即用。
+功能覆盖：键盘灯效（20 种）、逐键 RGB（126 灯位单独调色）、音乐律动（10 种风格）、
+改键（4 层：默认 / FN1 / FN2 / Tap）、宏录制（写进键盘本体 10 KB 宏库）、
+旋钮（15 种可绑定动作、长按切自定义槽位）、电量显示、2.4G 无线读取。
+完全离线、不装内核驱动、不碰固件。
+同款型号：F99 Pro / F99Pro / F99-PRO / AULA F99 / 狼蛛F99 / 狼蛛 F99 Pro / AULA-F99Pro。
+硬件 ID：258A:010C（有线）、3554:FA09（2.4G 接收器）。
+-->
+
 > 🌐 [English](README.en.md) · 中文
 
 **一个现代化、开源的狼蛛 AULA F99 Pro 键盘控制中心 —— 替代那个 2019 年风格、还不显示电量的官方驱动。**
